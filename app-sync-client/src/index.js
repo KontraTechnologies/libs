@@ -2,15 +2,29 @@ const aws4 = require("aws4");
 const https = require("https");
 
 class AppSync {
-  constructor({ accessKeyId, secretAccessKey, region, host }) {
-    this.host = host;
+  /**
+   * AppSync constructor
+   * @param {Object} param - The param object
+   * @param {String} param.accessKeyId - The access key ID of the role for the caller to assume
+   * @param {String} param.secretAccessKey - The secret access key of the role for the caller to assume
+   * @param {String} param.region - The region that the appsync api is hosted in
+   * @param {String} param.host - The appsync url
+   */
+  constructor({ accessKeyId, secretAccessKey, region, url }) {
+    this.host = url.split("https://")[1];
     this.region = region;
     this.credentials = {
       accessKeyId,
       secretAccessKey
-    }
+    };
   }
 
+  /**
+   * Make a request to appsync and return promise
+   * @param {Object} param - The param object
+   * @param {String} param.request - The graphql request
+   * @param {String} param.variables - The graphql request variables
+   */
   async request({ request, variables }) {
 
     const body = {
@@ -27,23 +41,76 @@ class AppSync {
     };
 
     aws4.sign(params, this.credentials);
-
-    let response = {};
     
-    try {
-      response = await AppSync.sendRequest(params);
-      return response;
-    } catch (e) {
-      console.log(e);
-    }
+    return AppSync.appsyncExp(params);
+
   }
 
+  /**
+   * Performs an async appsync operation, uses exponential backoff if
+   * 429 or 5xx error occurs
+   * @param {Object} appSyncParams - appsync siv4 signed params 
+   */
+  static async appsyncExp(appSyncParams) {
+
+    const MAX_RETRIES = 5;
+    let retry = false;
+    let retries = 0;
+    let waitTime = 0;
+    let response = {};
+
+    do {
+      try {
+        response = await AppSync.sendRequest(appSyncParams);
+        retry = false;
+      } catch (e) {
+        if (e.statusCode === 429 || e.statusCode >= 500) {
+          retry = true;
+
+          if (retries === MAX_RETRIES) {
+            throw ({...e, retries: retries});
+          }
+
+        } else {
+          throw(e);
+        }
+      }
+      waitTime = AppSync.getWaitTime(retries);
+      await AppSync.sleep(waitTime);
+    } while (retry && retries++ < MAX_RETRIES);
+    
+    return (response);
+  }
+
+  /**
+   * Waits for a certain time
+   * @param {Int} ms - The length of time in ms to wait. 
+   */
+  static sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Return the next wait interval, in millisecods, using an exponential
+   * backoff algorithm.
+   * @param {Int} retryCount - Current retries
+   */
+  static getWaitTime(retryCount) {
+    const waitTime = Math.pow(2, retryCount) * 100;
+
+    return waitTime;
+  }
+
+  /**
+   * Make the network request and deal with the response
+   * @param {Object} params - Appsync params 
+   */
   static sendRequest(params) {
     return new Promise(function (resolve, reject) {
       const req = https.request(params, function (res) {
         // reject on bad status
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          return reject(new Error(res));
+          return reject({statusCode: res.statusCode, statusMessage: res.statusMessage});
         }
         // cumulate data
         let body = [];
