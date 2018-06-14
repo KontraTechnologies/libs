@@ -54,6 +54,7 @@ class AppSync {
   static async appsyncExp(appSyncParams) {
 
     const MAX_RETRIES = 5;
+    const MAX_WAIT_INTERVAL_MS = 3000;
     let retry = false;
     let retries = 0;
     let waitTime = 0;
@@ -75,7 +76,7 @@ class AppSync {
           throw(e);
         }
       }
-      waitTime = AppSync.getWaitTime(retries);
+      waitTime = Math.min(AppSync.getWaitTime(retries), MAX_WAIT_INTERVAL_MS);
       await AppSync.sleep(waitTime);
     } while (retry && retries++ < MAX_RETRIES);
     
