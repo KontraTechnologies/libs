@@ -1,17 +1,19 @@
 module.exports = `
-  query CreateMessage(
-    $message: String!,
-    $toNumber: String!,
-    $fromNumber: String!,
-    $propertyId: String!,
-    $messageType: String!,  
-  ) createMessage(
-    message: $message,
-    toNumber: $toNumber,
-    fromNumber: $fromNumber,
-    propertyId: $propertyId,
-    messageType: $messageType
+mutation CreateMessage(
+  $message: String!,
+  $toNumber: String!,
+  $fromNumber: String!,
+  $propertyId: String!,
+  $messageType: String!,  
+){
+  createMessage(
+  message: $message,
+  toNumber: $toNumber,
+  fromNumber: $fromNumber,
+  propertyId: $propertyId,
+  messageType: $messageType
   ){
     fromNumber
   }
+}
 `

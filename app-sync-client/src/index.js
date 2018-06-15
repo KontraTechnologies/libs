@@ -1,5 +1,7 @@
 const aws4 = require("aws4");
 const https = require("https");
+const util = require('util');
+
 
 class AppSync {
   /**
@@ -11,7 +13,7 @@ class AppSync {
    * @param {String} param.host - The appsync url
    */
   constructor({ accessKeyId, secretAccessKey, region, url }) {
-    this.host = url.split("https://")[1];
+    this.host = url.split("https://")[1].split("/graphql")[0];
     this.region = region;
     this.credentials = {
       accessKeyId,
@@ -124,11 +126,14 @@ class AppSync {
           let operation = "";
           try {
             body = JSON.parse(Buffer.concat(body).toString());
+            if (body.errors) {
+              reject(body.errors);
+            }
             operation = Object.keys(body.data)[0];
+            resolve(body.data[operation]);
           } catch (e) {
             reject(e);
           }
-          resolve(body.data[operation]);
         });
       });
       // reject on request error

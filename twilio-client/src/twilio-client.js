@@ -4,6 +4,8 @@ const twilio = require("twilio");
  * Appsync operations
  */
 const CreateMessage = require("../graphql/queries/createMessage");
+const UpdateContact = require("../graphql/mutations/updateContact");
+const QueryContactsByPropertyIdIndex = require("../graphql/queries/queryContactsByPropertyIdIndex");
 
 class Twilio {
   constructor({ accountSid, authToken, appsync }) {
@@ -81,16 +83,16 @@ class Twilio {
           /**
            * Phone number has opted-out
            */
-          await this.dynamodb.updateItem({
-            tableName: process.env.CONTACTS_TABLE_NAME,
-            key: {
-              phoneNumber: to,
-              propertyId
-            },
-            updateAttributes: {
-              isVerified: false
+          await this.appsync.request({
+            request: UpdateContact,
+            variables: {
+              input: {
+                propertyId,
+                isVerified: false,
+                phoneNumber: to 
+              }
             }
-          })
+          });
           break;
       }
     }
@@ -122,28 +124,22 @@ class Twilio {
   }
 
   async sendSmsToContacts({from, propertyId, message, contactNumber}) {
-
-    const params = {
-      TableName: process.env.CONTACTS_TABLE_NAME,
-      IndexName: process.env.PROPERTYID_INDEX_NAME,
-      KeyConditionExpression: "propertyId = :propertyId",
-      FilterExpression: "isVerified = :isVerified AND contactType = :contactType AND phoneNumber <> :phoneNumber",
-      ExpressionAttributeValues: {
-        ":propertyId": propertyId,
-        ":isVerified": true,
-        ":contactType": "MOBILE",
-        ":phoneNumber": contactNumber
+  
+    const contacts = await this.appsync.request({
+      request: QueryContactsByPropertyIdIndex,
+      variables: {
+        propertyId
       }
-    };
+    });
   
-    const contacts = await this.dynamodb.queryItem(params);
-  
-    if (contacts.Items.length === 0)
+    if (contacts.items.length === 0)
       return
   
     const promiseArray = [];
   
-    for(const contact of contacts.Items) {
+    for(const contact of contacts.items) {
+      if (contact.phoneNumber === contactNumber || contact.isVerified === false) continue;
+
       promiseArray.push(
         this.sendSms({
           to: contact.phoneNumber,
