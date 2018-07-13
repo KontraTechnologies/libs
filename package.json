@@ -1,0 +1,23 @@
+{
+  "name": "libs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KontraTechnologies/libs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KontraTechnologies/libs/issues"
+  },
+  "homepage": "https://github.com/KontraTechnologies/libs#readme",
+  "devDependencies": {
+    "aws-sdk": "^2.260.1"
+  }
+}

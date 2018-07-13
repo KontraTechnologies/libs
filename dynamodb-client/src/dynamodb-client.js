@@ -30,11 +30,14 @@ class DynamoDB {
 
     async queryItem(params) {
 
-        const results = await this.documentClient.query(params).promise();
+        return this.documentClient.query(params).promise();
 
-        return results;
     }
 
+    async batchGet(params) {
+        return this.documentClient.batchGet(params).promise();
+    }
+    
     async deleteItem({tableName, key}) {
 
         const params = {
