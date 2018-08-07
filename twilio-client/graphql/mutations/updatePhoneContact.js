@@ -1,6 +1,6 @@
 module.exports = `
-mutation UpdateContact($input: UpdateContactInput!) {
-  updateContact(input: $input) {
+mutation UpdatePhoneContact($input: UpdatePhoneContactInput!) {
+  updatePhoneContact(input: $input) {
     name
     updatedAt
     phoneNumber

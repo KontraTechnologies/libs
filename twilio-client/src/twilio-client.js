@@ -3,9 +3,9 @@ const twilio = require("twilio");
 /**
  * Appsync operations
  */
-const CreateMessage = require("../graphql/queries/createMessage");
-const UpdateContact = require("../graphql/mutations/updateContact");
-const QueryContactsByPropertyIdIndex = require("../graphql/queries/queryContactsByPropertyIdIndex");
+const CreateMessage = require("../graphql/mutations/createMessage");
+const UpdatePhoneContact = require("../graphql/mutations/updatePhoneContact");
+const QueryPhoneContactsByPropertyIdIndex = require("../graphql/queries/queryPhoneContactsByPropertyIdIndex");
 
 class Twilio {
   constructor({ accountSid, authToken, appsync }) {
@@ -84,7 +84,7 @@ class Twilio {
            * Phone number has opted-out
            */
           await this.appsync.request({
-            request: UpdateContact,
+            request: UpdatePhoneContact,
             variables: {
               input: {
                 propertyId,
@@ -126,9 +126,10 @@ class Twilio {
   async sendSmsToContacts({from, propertyId, message, contactNumber}) {
   
     const contacts = await this.appsync.request({
-      request: QueryContactsByPropertyIdIndex,
+      request: QueryPhoneContactsByPropertyIdIndex,
       variables: {
-        propertyId
+        propertyId,
+        contactType: "MOBILE"
       }
     });
   
