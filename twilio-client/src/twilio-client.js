@@ -123,6 +123,37 @@ class Twilio {
     })
   }
 
+  async sendUrlToContacts({from, propertyId, contactNumber, address, instanceId}) {
+  
+    const contacts = await this.appsync.request({
+      request: QueryPhoneContactsByPropertyIdIndex,
+      variables: {
+        propertyId,
+        contactType: "MOBILE"
+      }
+    });
+  
+    if (contacts.items.length === 0)
+      return
+  
+    const promiseArray = [];
+  
+    for(const contact of contacts.items) {
+      if (contact.phoneNumber === contactNumber || contact.isVerified === false) continue;
+
+      promiseArray.push(
+        this.sendSms({
+          to: contact.phoneNumber,
+          from: from,
+          msg: `Kirs triggered at ${address}. See details at\n\nhttps://kirs.app/chat/${instanceId}/${contact.phoneNumber}`,
+          propertyId
+        })
+      );
+    }
+  
+    return Promise.all(promiseArray);
+  }
+
   async sendSmsToContacts({from, propertyId, message, contactNumber}) {
   
     const contacts = await this.appsync.request({
@@ -145,7 +176,8 @@ class Twilio {
         this.sendSms({
           to: contact.phoneNumber,
           from: from,
-          msg: message
+          msg: message,
+          propertyId
         })
       );
     }
