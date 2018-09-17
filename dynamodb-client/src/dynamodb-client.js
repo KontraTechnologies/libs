@@ -49,18 +49,31 @@ class DynamoDB {
 
     }
 
-    async updateItem({tableName, key, updateAttributes}) {
+    async updateItem({tableName, key, updateAttributes, conditionExpression, returnValues = "ALL_NEW"}) {
+
+        console.log("Update attributes: ", updateAttributes);
 
         let updateExpression = 'set ';
         let expressionAttributeValues = {};
+        let expressionAttributeNames = {};
 
-        // Add updatedAt attribute
-        updateAttributes.updatedAt = Date.now()
+        let removeAttributes = [];
 
         let index = 0;
 
         for(const key of Object.keys(updateAttributes)) {
-            updateExpression += `${key} = :${key}`;
+            if (updateAttributes[key] === null) {
+                delete updateAttributes[key];
+                removeAttributes[key] = updateAttributes[key];
+            } else if (typeof updateAttributes[key] === "undefined") {
+                delete updateAttributes[key];
+            }
+        }
+
+        for(const key of Object.keys(updateAttributes)) {
+
+            updateExpression += `#${key} = :${key}`;
+            expressionAttributeNames[`#${key}`] = key;
             expressionAttributeValues[`:${key}`] = updateAttributes[key];
 
             // Put a comma between values unless it is the last one
@@ -71,12 +84,37 @@ class DynamoDB {
             index++;
         }
 
+        if (Object.keys(removeAttributes).length > 0) {
+            updateExpression += " remove ";
+
+            index = 0;
+
+            for(const key of Object.keys(removeAttributes)) {
+    
+                updateExpression += `#${key}`;
+                expressionAttributeNames[`#${key}`] = key;
+    
+                // Put a comma between values unless it is the last one
+                if(index < Object.keys(removeAttributes).length - 1){
+                    updateExpression += ', ';
+                }
+                
+                index++;
+            }
+
+        }
+
         const params = {
             TableName: tableName,
             Key: key,
+            ReturnValues: returnValues,
             UpdateExpression: updateExpression,
+            ConditionExpression: conditionExpression,
+            ExpressionAttributeNames: expressionAttributeNames,
             ExpressionAttributeValues: expressionAttributeValues
         };
+
+        console.log("Update params: ", params);
 
         return this.documentClient.update(params).promise();
     }
