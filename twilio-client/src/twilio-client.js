@@ -30,13 +30,23 @@ class Twilio {
 
     switch (type) {
       case "SMS":
-        await this.recordMessage({
-          to: this.incomingData.To,
-          from: this.incomingData.From,
-          message: this.incomingData.Body,
-          propertyId,
-          type
-        });
+        if(parseInt(this.incomingData.NumMedia, 10) > 0) {
+          await this.recordMessage({
+            to: this.incomingData.To,
+            from: this.incomingData.From,
+            message: this.incomingData.MediaUrl0,
+            propertyId,
+            type
+          });
+        } else {
+          await this.recordMessage({
+            to: this.incomingData.To,
+            from: this.incomingData.From,
+            message: this.incomingData.Body,
+            propertyId,
+            type
+          });
+        }
         break;
       case "VOICE":
         switch (this.incomingData.CallStatus) {
