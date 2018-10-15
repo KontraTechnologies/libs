@@ -155,7 +155,7 @@ class Twilio {
         this.sendSms({
           to: contact.phoneNumber,
           from: from,
-          msg: `Kirs triggered at ${address}. See details at\n\nhttps://kirs.app/chat/${instanceId}/${contact.phoneNumber}`,
+          msg: `Kirs triggered at ${address}. See details at\n\nhttps://getkirs.com/chat/${instanceId}/${contact.phoneNumber}`,
           propertyId
         })
       );
