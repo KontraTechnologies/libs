@@ -6,15 +6,16 @@ class Sns {
     this.sns = new Aws.SNS();
   }
 
-  async publishToTopic({ topicName, title, body }) {
+  async publishToTopic({ topicName, title, body, id }) {
     const topic = await this.sns.createTopic({ Name: topicName }).promise();
 
     const msgStr = JSON.stringify({
       default: 'This is the default message. Your platform is not supported yet.',
       GCM: JSON.stringify({
-        notification: {
+        data: {
           title,
-          body
+          body,
+          id
         },
         priority: 'high'
       })
